@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OSCE Mock Examiner Terminal</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+       <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -25,10 +24,8 @@
         }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- SheetJS (xlsx) for Excel Export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Supabase JS Client for Cloud Syncing -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+       <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+       <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         ::-webkit-scrollbar {
             width: 6px;
@@ -54,8 +51,7 @@
 </head>
 <body class="bg-[#f4f5f7] dark:bg-[#090d16] text-[#0f172a] dark:text-[#f8fafc] antialiased min-h-screen flex flex-col font-sans pb-24 transition-colors duration-300">
 
-    <!-- Header / Speedwell Top Bar -->
-    <header class="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-white sticky top-0 z-40 shadow-md border-b border-slate-800">
+      <header class="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-white sticky top-0 z-40 shadow-md border-b border-slate-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-3">
             <div class="flex items-center space-x-3">
                 <img src="MED222%20Logo.png" alt="MED222 Logo" class="h-10 sm:h-12 w-auto object-contain rounded bg-white/10 p-0.5">
@@ -65,7 +61,7 @@
                 </div>
             </div>
 
-            <!-- Header Controls & Timer -->
+          
             <div class="flex items-center gap-3">
                 <div class="bg-black/30 backdrop-blur-sm border border-slate-700 px-3 py-1.5 rounded-lg flex items-center space-x-3">
                     <div class="text-right">
@@ -95,10 +91,10 @@
         </div>
     </header>
 
-    <!-- Main Content Area -->
+ 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex-grow space-y-6">
 
-        <!-- Candidate Selector & Info Card -->
+        
         <section class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-sm border border-[#cbd5e1] dark:border-slate-700 p-4 sm:p-5 transition-colors duration-300">
             
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 pb-4 border-b border-[#cbd5e1] dark:border-slate-700">
@@ -113,7 +109,7 @@
                 <div>
                     <label for="genderFilter" class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1">Gender</label>
                     <select id="genderFilter" onchange="filterCandidates()" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg py-2 px-3 text-sm font-semibold text-[#0f172a] dark:text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#0f172a]">
-                        <!-- Dynamically generated -->
+                       
                     </select>
                 </div>
                 <div>
@@ -142,7 +138,7 @@
                     </div>
                     <div class="relative">
                         <select id="candidateSelect" onchange="loadCandidate(this.value)" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg py-2.5 px-3 pr-8 text-sm font-semibold text-[#0f172a] dark:text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#0f172a] focus:border-[#0f172a] transition">
-                            <!-- Populated dynamically -->
+                           
                         </select>
                     </div>
                 </div>
@@ -160,11 +156,11 @@
             </div>
         </section>
 
-        <!-- Rubric Grid -->
+        
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div class="lg:col-span-8 space-y-6">
 
-                <!-- Section 1 -->
+                
                 <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-sm border border-[#cbd5e1] dark:border-slate-700 overflow-hidden transition-colors duration-300">
                     <div class="bg-[#1e293b] text-white px-4 py-3 flex justify-between items-center border-b border-slate-700">
                         <div class="flex items-center gap-2">
@@ -186,7 +182,7 @@
                     </div>
                 </div>
 
-                <!-- Section 2 -->
+                
                 <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-sm border border-[#cbd5e1] dark:border-slate-700 overflow-hidden transition-colors duration-300">
                     <div class="bg-[#1e293b] text-white px-4 py-3 flex justify-between items-center border-b border-slate-700">
                         <div class="flex items-center gap-2">
@@ -209,7 +205,7 @@
                 </div>
             </div>
 
-            <!-- Feedback & Sidebar Column -->
+            
             <div class="lg:col-span-4 space-y-6">
                 <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-sm border border-[#cbd5e1] dark:border-slate-700 p-5 space-y-4 sticky top-20 transition-colors duration-300">
                     <h3 class="text-sm font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 border-b border-[#cbd5e1] dark:border-slate-700 pb-2">
@@ -298,7 +294,7 @@
         </div>
     </main>
 
-    <!-- Manual Add Student Modal -->
+    
     <div id="manualAddModal" class="fixed inset-0 bg-slate-950/60 z-50 hidden backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
         <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-2xl border border-[#cbd5e1] dark:border-slate-700 w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
             <div class="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-white px-5 py-4 flex justify-between items-center border-b border-slate-800">
@@ -322,7 +318,7 @@
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1">Gender / Group</label>
                     <select id="manualGender" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2.5 text-sm font-semibold text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
-                        <!-- Populated dynamically -->
+                        
                     </select>
                 </div>
                 <div>
@@ -345,7 +341,7 @@
         </div>
     </div>
 
-    <!-- Bottom Action Dock -->
+    
     <div class="fixed bottom-0 left-0 right-0 bg-[#ffffff] dark:bg-[#1e293b] border-t border-[#cbd5e1] dark:border-slate-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-30 py-3 px-4 sm:px-6 transition-colors duration-300">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2 text-xs sm:text-sm text-[#64748b] dark:text-slate-300">
@@ -361,7 +357,7 @@
         </div>
     </div>
 
-    <!-- History / Submitted Reviews Side Drawer -->
+    
     <div id="historyDrawer" class="fixed inset-y-0 right-0 w-full sm:w-96 bg-[#ffffff] dark:bg-[#1e293b] shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col border-l border-[#cbd5e1] dark:border-slate-700">
         <div class="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-white p-4 flex justify-between items-center border-b border-slate-800">
             <div class="flex items-center gap-2">
@@ -382,16 +378,16 @@
             </div>
         </div>
 
-        <!-- History List Container -->
+        
         <div id="historyList" class="flex-1 overflow-y-auto p-3 space-y-3 divide-y divide-[#cbd5e1]/40 dark:divide-slate-700/50 bg-[#ffffff] dark:bg-[#1e293b]"></div>
     </div>
 
-    <!-- Background Overlay for Drawer -->
+    
     <div id="drawerOverlay" onclick="toggleHistoryDrawer()" class="fixed inset-0 bg-slate-950/60 z-40 hidden backdrop-blur-sm transition-opacity"></div>
 
-    <!-- Script Block with Safe Supabase / LocalStorage Hybrid Support & Debugging -->
+    
     <script>
-        // Supabase configuration
+        
         const SUPABASE_URL = 'https://otmguoasscbplxfzdwww.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90bWd1b2Fzc2NicGx4Znpkd3d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNjE5NzEsImV4cCI6MjEwODkzNzk3MX0.e7Ai1AInObZItBKR6tM3juYj0jT_7AClptHnGBjbeNU';
         
