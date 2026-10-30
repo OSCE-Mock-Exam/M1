@@ -1,1 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSCE Mock Examiner Terminal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        enterprise: {
+                            bg: '#f4f5f7',
+                            card: '#ffffff',
+                            border: '#cbd5e1',
+                            text: '#0f172a',
+                            muted: '#64748b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- SheetJS (xlsx) for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Supabase JS Client for Cloud Syncing -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-[#f4f5f7] dark:bg-[#090d16] text-[#0f172a] dark:text-[#f8fafc] antialiased min-h-screen flex flex-col font-sans pb-24 transition-colors duration-300">
 
+    <!-- Header / Speedwell Top Bar -->
+    <header class="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-white sticky top-0 z-40 shadow-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <img src="MED222%20Logo.png" alt="MED222 Logo" class="h-10 sm:h-12 w-auto object-contain rounded bg-white/10 p-0.5">
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold leading-tight text-white">Station: Intramuscular Injection & WIPPPER</h1>
+                    <p class="text-xs text-slate-300">JED MED222 - Mock OSCE Team | By The Student For The Students</p>
+                </div>
+            </div>
+
+            <!-- Header Controls & Timer -->
+            <div class="flex items-center gap-3">
+                <div class="bg-black/30 backdrop-blur-sm border border-slate-700 px-3 py-1.5 rounded-lg flex items-center space-x-3">
+                    <div class="text-right">
+                        <div class="text-[10px] uppercase text-slate-400 font-medium tracking-wider">Station Timer</div>
+                        <div id="timerDisplay" class="font-mono text-lg font-bold text-slate-100">05:00</div>
+                    </div>
+                    <div class="flex space-x-1">
+                        <button onclick="toggleTimer()" id="timerToggleBtn" class="p-1.5 hover:bg-white/10 text-slate-300 rounded text-xs transition" title="Play/Pause">
+                            <i class="fa-solid fa-pause"></i>
+                        </button>
+                        <button onclick="resetTimer()" class="p-1.5 hover:bg-white/10 text-slate-300 rounded text-xs transition" title="Reset Timer">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <button onclick="toggleDarkMode()" class="bg-black/30 hover:bg-black/40 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-sm font-semibold transition" title="Toggle Dark Mode">
+                    <i id="darkModeIcon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <button onclick="toggleHistoryDrawer()" class="bg-[#0f172a] hover:bg-slate-800 border border-slate-700 text-white px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition shadow-sm">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span class="hidden sm:inline">Saved Reviews</span>
+                    <span id="submittedBadge" class="bg-slate-700 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex-grow space-y-6">
+
+        <!-- Candidate Selector & Info Card -->
+        <section class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-sm border border-[#cbd5e1] dark:border-slate-700 p-4 sm:p-5 transition-colors duration-300">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 pb-4 border-b border-[#cbd5e1] dark:border-slate-700">
+                <div>
+                    <label for="branchFilter" class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1">Branch</label>
+                    <select id="branchFilter" onchange="onBranchChange()" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg py-2 px-3 text-sm font-semibold text-[#0f172a] dark:text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#0f172a]">
+                        <option value="Jeddah">Jeddah</option>
+                        <option value="Aseer">Aseer</option>
+                        <option value="Dammam">Dammam</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="genderFilter" class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1">Gender</label>
+                    <select id="genderFilter" onchange="filterCandidates()" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg py-2 px-3 text-sm font-semibold text-[#0f172a] dark:text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#0f172a]">
+                        <!-- Dynamically generated -->
+                    </select>
+                </div>
+                <div>
+                    <label for="searchFilter" class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1">Search Student</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-[#64748b] dark:text-slate-500 text-sm"></i>
+                        <input type="text" id="searchFilter" oninput="filterCandidates()" placeholder="Search by name or ID..." class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg py-2 pl-9 pr-3 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#0f172a]">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <div class="md:col-span-6 space-y-1">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <label for="candidateSelect" class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400">
+                            <i class="fa-solid fa-user-graduate text-[#0f172a] dark:text-slate-300 mr-1"></i> Select Candidate from List
+                        </label>
+                        <div class="flex gap-2">
+                            <button id="deleteManualBtn" onclick="deleteCurrentManualStudent()" class="hidden text-xs bg-rose-700 hover:bg-rose-800 text-white font-semibold px-2.5 py-1 rounded-md transition items-center gap-1 shadow-sm" title="Delete this manually added student">
+                                <i class="fa-solid fa-trash-can"></i> Delete Added Student
+                            </button>
+                            <button onclick="openManualAddModal()" class="text-xs bg-[#0f172a] hover:bg-slate-800 text-white font-semibold px-2.5 py-1 rounded-md transition flex items-center gap-1 shadow-sm">
+                                <i class="fa-solid fa-user-plus"></i> Add Student Manually
+                            </button>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <select id="candidateSelect" onchange="loadCandidate(this.value)" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg py-2.5 px-3 pr-8 text-sm font-semibold text-[#0f172a] dark:text-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#0f172a] focus:border-[#0f172a] transition">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="md:col-span-6 flex flex-wrap items-center justify-between gap-3 bg-[#f4f5f7] dark:bg-[#0f172a]/50 p-3 rounded-lg border border-[#cbd5e1] dark:border-slate-700">
+                    <div>
+                        <div class="text-xs text-[#64748b] dark:text-slate-400">Selected Candidate:</div>
+                        <div id="candidateNameDisplay" class="font-bold text-[#0f172a] dark:text-[#f8fafc] text-base">Select a candidate</div>
+                        <div id="candidateIdDisplay" class="text-xs text-[#64748b] dark:text-slate-400 font-mono">ID: --</div>
+                    </div>
+                    <div id="candidateStatusBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700">
+                        Pending Assessment
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rubric Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-8 space-y-6">
+
+                <!-- Section 1 -->
+                <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-sm border border-[#cbd5e1] dark:border-slate-700 overflow-hidden transition-colors duration-300">
+                    <div class="bg-[#1e293b] text-white px-4 py-3 flex justify-between items-center border-b border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-[#0f172a] text-xs px-2 py-0.5 rounded font-bold border border-slate-700">Part A</span>
+                            <h2 class="font-bold text-sm sm:text-base">Communication Skills | Performing WIPPPER</h2>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-[#f4f5f7] dark:bg-[#1e293b]/80 text-[#64748b] dark:text-slate-400 text-xs uppercase border-b border-[#cbd5e1] dark:border-slate-700">
+                                    <th class="py-2.5 px-4 w-12 text-center">#</th>
+                                    <th class="py-2.5 px-4">Procedure Step</th>
+                                    <th class="py-2.5 px-4 w-48 text-right">Evaluation</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wipperTableBody" class="divide-y divide-[#cbd5e1]/50 dark:divide-slate-700/60 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section 2 -->
+                <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-sm border border-[#cbd5e1] dark:border-slate-700 overflow-hidden transition-colors duration-300">
+                    <div class="bg-[#1e293b] text-white px-4 py-3 flex justify-between items-center border-b border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-[#0f172a] text-xs px-2 py-0.5 rounded font-bold border border-slate-700">Part B</span>
+                            <h2 class="font-bold text-sm sm:text-base">Intramuscular Injection (Gluteus Maximus Site)</h2>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-[#f4f5f7] dark:bg-[#1e293b]/80 text-[#64748b] dark:text-slate-400 text-xs uppercase border-b border-[#cbd5e1] dark:border-slate-700">
+                                    <th class="py-2.5 px-4 w-12 text-center">#</th>
+                                    <th class="py-2.5 px-4">Procedure Step</th>
+                                    <th class="py-2.5 px-4 w-60 text-right">Evaluation</th>
+                                </tr>
+                            </thead>
+                            <tbody id="imTableBody" class="divide-y divide-[#cbd5e1]/50 dark:divide-slate-700/60 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback & Sidebar Column -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-sm border border-[#cbd5e1] dark:border-slate-700 p-5 space-y-4 sticky top-20 transition-colors duration-300">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 border-b border-[#cbd5e1] dark:border-slate-700 pb-2">
+                        <i class="fa-solid fa-chart-simple text-[#0f172a] dark:text-slate-300 mr-1"></i> Progress Overview
+                    </h3>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-[#64748b] dark:text-slate-300 font-medium">Part A: WIPPPER Progress</span>
+                        </div>
+                        <div class="w-full bg-[#f4f5f7] dark:bg-slate-700 rounded-full h-2.5 overflow-hidden border border-[#cbd5e1] dark:border-none">
+                            <div id="wipperBar" class="bg-rose-600 h-2.5 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-center text-sm pt-1">
+                            <span class="text-[#64748b] dark:text-slate-300 font-medium">Part B: IM Injection Progress</span>
+                        </div>
+                        <div class="w-full bg-[#f4f5f7] dark:bg-slate-700 rounded-full h-2.5 overflow-hidden border border-[#cbd5e1] dark:border-none">
+                            <div id="imBar" class="bg-rose-600 h-2.5 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <label for="examinerNotes" class="block text-xs font-bold uppercase text-[#64748b] dark:text-slate-400 mb-1">
+                            Examiner Comments / Missed Steps
+                        </label>
+                        <textarea id="examinerNotes" rows="3" class="w-full p-2.5 border border-[#cbd5e1] dark:border-slate-700 rounded-lg text-sm bg-[#f4f5f7] dark:bg-[#0f172a] text-[#0f172a] dark:text-[#f8fafc] focus:bg-[#ffffff] dark:focus:bg-[#1e293b] focus:ring-2 focus:ring-[#0f172a] focus:outline-none transition" placeholder="Enter notes or feedback regarding candidate performance..."></textarea>
+                    </div>
+
+                    <div class="pt-4 border-t border-[#cbd5e1] dark:border-slate-700 space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-2">
+                            <i class="fa-solid fa-comment-medical text-[#0f172a] dark:text-slate-300 mr-1"></i> Student Post-Exam Feedback
+                        </h4>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">1. How useful was this mock exam? (1-10)</label>
+                            <select id="fbUseful" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
+                                <option value="" disabled selected>Select rating...</option>
+                                <option value="1">1 - Not useful at all</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Neutral</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10 - Very useful</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">2. How helpful was this in reducing anxiety? (1-10)</label>
+                            <select id="fbAnxiety" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
+                                <option value="" disabled selected>Select rating...</option>
+                                <option value="1">1 - Not helpful</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Neutral</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10 - Extremely helpful</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">3. How fair/appropriate was the difficulty? (1-10)</label>
+                            <select id="fbDifficulty" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
+                                <option value="" disabled selected>Select rating...</option>
+                                <option value="1">1 - Unfair/Unexpected</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Neutral</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10 - Very fair/Expected</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">4. Were station instructions clear? (1-10)</label>
+                            <select id="fbClear" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
+                                <option value="" disabled selected>Select rating...</option>
+                                <option value="1">1 - Unclear</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Neutral</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10 - Very clear</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">5. Recommend doing this again next year? (1-10)</label>
+                            <select id="fbRecommend" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
+                                <option value="" disabled selected>Select rating...</option>
+                                <option value="1">1 - Do not recommend</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Neutral</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10 - Highly recommend</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="studentComments" class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">Student's Additional Comments</label>
+                            <textarea id="studentComments" rows="2" class="w-full p-2.5 border border-[#cbd5e1] dark:border-slate-700 rounded-lg text-sm bg-[#f4f5f7] dark:bg-[#0f172a] text-[#0f172a] dark:text-[#f8fafc] focus:bg-[#ffffff] dark:focus:bg-[#1e293b] focus:ring-2 focus:ring-[#0f172a] focus:outline-none transition" placeholder="Any final thoughts from the student..."></textarea>
+                        </div>
+                    </div>
+
+                    <button onclick="resetCurrentForm()" class="w-full py-2 mt-4 bg-[#f4f5f7] dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[#64748b] dark:text-slate-300 rounded-lg text-xs font-semibold transition border border-[#cbd5e1] dark:border-slate-700">
+                        <i class="fa-solid fa-arrows-rotate mr-1"></i> Clear Selection Options
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Manual Add Student Modal -->
+    <div id="manualAddModal" class="fixed inset-0 bg-slate-950/60 z-50 hidden backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-2xl border border-[#cbd5e1] dark:border-slate-700 w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-white px-5 py-4 flex justify-between items-center border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-slate-300"></i>
+                    <h3 class="font-bold text-base">Add Student Manually</h3>
+                </div>
+                <button onclick="closeManualAddModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1">Branch</label>
+                    <select id="manualBranch" onchange="onManualBranchChange()" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2.5 text-sm font-semibold text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
+                        <option value="Jeddah">Jeddah</option>
+                        <option value="Aseer">Aseer</option>
+                        <option value="Dammam">Dammam</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1">Gender / Group</label>
+                    <select id="manualGender" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2.5 text-sm font-semibold text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1">Student Full Name</label>
+                    <input type="text" id="manualName" placeholder="Enter full name..." class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2.5 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a] focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1">Student ID</label>
+                    <input type="text" id="manualId" placeholder="Enter student ID..." class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2.5 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a] focus:outline-none">
+                </div>
+                <div class="pt-2 flex gap-3">
+                    <button onclick="closeManualAddModal()" class="w-1/2 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-bold text-sm transition border border-slate-300 dark:border-slate-700">
+                        Cancel
+                    </button>
+                    <button onclick="saveManualStudent()" class="w-1/2 py-2.5 bg-[#0f172a] hover:bg-slate-800 text-white rounded-lg font-bold text-sm transition shadow border border-slate-700">
+                        Add to List
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Action Dock -->
+    <div class="fixed bottom-0 left-0 right-0 bg-[#ffffff] dark:bg-[#1e293b] border-t border-[#cbd5e1] dark:border-slate-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-30 py-3 px-4 sm:px-6 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 text-xs sm:text-sm text-[#64748b] dark:text-slate-300">
+                <i class="fa-solid fa-user text-[#64748b] dark:text-slate-400"></i>
+                <span>Active: <strong id="bottomCandidateName" class="text-[#0f172a] dark:text-[#f8fafc]">None Selected</strong></span>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="submitEvaluation()" class="bg-[#0f172a] hover:bg-slate-800 border border-slate-700 text-white font-bold px-6 py-2.5 rounded-lg shadow transition flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Submit & Save Evaluation</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History / Submitted Reviews Side Drawer -->
+    <div id="historyDrawer" class="fixed inset-y-0 right-0 w-full sm:w-96 bg-[#ffffff] dark:bg-[#1e293b] shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col border-l border-[#cbd5e1] dark:border-slate-700">
+        <div class="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-white p-4 flex justify-between items-center border-b border-slate-800">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-folder-closed text-slate-300"></i>
+                <h2 class="font-bold text-base">Submitted Reviews</h2>
+            </div>
+            <button onclick="toggleHistoryDrawer()" class="text-slate-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="p-3 bg-[#f4f5f7] dark:bg-[#0f172a] border-b border-[#cbd5e1] dark:border-slate-700 space-y-2">
+            <input type="text" id="historySearch" oninput="renderHistoryList()" placeholder="Search History by name or ID..." class="w-full text-xs p-2 border border-[#cbd5e1] dark:border-slate-700 bg-[#ffffff] dark:bg-[#1e293b] text-[#0f172a] dark:text-[#f8fafc] rounded-lg focus:ring-2 focus:ring-[#0f172a] focus:outline-none">
+            <div class="flex justify-between items-center text-xs text-[#64748b] dark:text-slate-400">
+                <span id="historyCount">0 reviews saved</span>
+                <div class="flex gap-2">
+                </div>
+            </div>
+        </div>
+
+        <!-- History List Container -->
+        <div id="historyList" class="flex-1 overflow-y-auto p-3 space-y-3 divide-y divide-[#cbd5e1]/40 dark:divide-slate-700/50 bg-[#ffffff] dark:bg-[#1e293b]"></div>
+    </div>
+
+    <!-- Background Overlay for Drawer -->
+    <div id="drawerOverlay" onclick="toggleHistoryDrawer()" class="fixed inset-0 bg-slate-950/60 z-40 hidden backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Script Block with Safe Supabase / LocalStorage Hybrid Support & Debugging -->
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://otmguoasscbplxfzdwww.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90bWd1b2Fzc2NicGx4Znpkd3d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNjE5NzEsImV4cCI6MjEwODkzNzk3MX0.e7Ai1AInObZItBKR6tM3juYj0jT_7AClptHnGBjbeNU';
+        
+        let _supabase = null;
+        try {
+            if (typeof supabase !== 'undefined' && !SUPABASE_URL.includes('YOUR_')) {
+                _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (e) {
+            console.warn("Supabase initialization skipped; using local storage.");
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            updateDarkModeIcon();
+        }
+
+        function updateDarkModeIcon() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const icon = document.getElementById('darkModeIcon');
+            icon.className = isDark ? 'fa-solid fa-sun text-slate-200' : 'fa-solid fa-moon';
+        }
+
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        const wipperSteps = [
+            "Wash hands", "Introduce herself/himself", "Permission", 
+            "Privacy (good lights & warm)", "Comfortable", "Cover with sheet (if needed)", 
+            "Position: Prone", "Exposure: Gluteal Region/Area or Buttocks Area", "Right side"
+        ];
+
+        const imSteps = [
+            "Wear gloves", "Location: Upper lateral quadrant of the buttock (to avoid sciatic nerve & vessels)", 
+            "Draw an imaginary line between the great trochanter and the posterior Iliac crest", 
+            "Site of Injection: is 1 inch above the middle of that line", "Sterilize with alcohol swab", 
+            "Circular motion starting from inside to outside", "Prepare medication", 
+            "Make sure no bubbles while cap is on", "Use dominant hand insert the needle in a 90 degree angle", 
+            "Aspirate (they have to mention: 'to make sure no blood')", "Push medication", 
+            "Press cotton swab on skin", "Remove the needle slowly", "Throw the needle in the sharps container", 
+            "Cover the patient", "Wash hand again", "Thank the patient"
+        ];
+
+        let masterCandidates = [];
+        let filteredCandidates = [];
+        let currentCandidate = null;
+        let submittedReviews = {};
+        let timerInterval = null;
+        let timerSeconds = 300;
+        let isTimerRunning = false;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            updateDarkModeIcon();
+            await loadStorageCloud();
+            loadManualAdditions();
+            renderTables();
+            onBranchChange();
+            startTimer();
+        });
+
+        async function loadStorageCloud() {
+            if (!_supabase) {
+                loadStorageLocalFallback();
+                return;
+            }
+            try {
+                const { data, error } = await _supabase.from('osce_reviews').select('*');
+                if (error) throw error;
+                
+                submittedReviews = {};
+                if (data) {
+                    data.forEach(row => {
+                        submittedReviews[row.candidate_id] = row.payload;
+                    });
+                }
+            } catch (e) {
+                console.warn("Cloud load failed, falling back to local storage:", e.message);
+                loadStorageLocalFallback();
+            }
+            updateSubmittedCount();
+            renderHistoryList();
+            populateCandidateSelect();
+        }
+
+        function loadStorageLocalFallback() {
+            const data = localStorage.getItem('speedwell_osce_reviews');
+            if (data) {
+                try { submittedReviews = JSON.parse(data); } catch(e) { submittedReviews = {}; }
+            }
+        }
+
+        async function saveStorageCloud(reviewRecord) {
+            submittedReviews[reviewRecord.candidateId] = reviewRecord;
+            
+            if (_supabase) {
+                try {
+                    const { error } = await _supabase.from('osce_reviews').upsert({
+                        candidate_id: reviewRecord.candidateId,
+                        candidate_name: reviewRecord.candidateName,
+                        branch: reviewRecord.branch,
+                        gender: reviewRecord.gender,
+                        total_score: reviewRecord.totalScore,
+                        wipper_score: reviewRecord.wipperScore,
+                        im_score: reviewRecord.imScore,
+                        notes: reviewRecord.notes,
+                        fb_useful: reviewRecord.fbUseful,
+                        fb_anxiety: reviewRecord.fbAnxiety,
+                        fb_difficulty: reviewRecord.fbDifficulty,
+                        fb_clear: reviewRecord.fbClear,
+                        fb_recommend: reviewRecord.fbRecommend,
+                        student_comments: reviewRecord.studentComments,
+                        payload: reviewRecord,
+                        timestamp: reviewRecord.timestamp
+                    });
+                    
+                    if (error) {
+                        alert("Supabase Save Error: " + error.message + "\n\n(Did you disable RLS?)");
+                        throw error;
+                    }
+                    
+                    // Also save locally as a backup if cloud succeeds
+                    localStorage.setItem('speedwell_osce_reviews', JSON.stringify(submittedReviews));
+                    
+                } catch (e) {
+                    console.warn("Cloud save failed, saving locally exclusively:", e);
+                    localStorage.setItem('speedwell_osce_reviews', JSON.stringify(submittedReviews));
+                }
+            } else {
+                localStorage.setItem('speedwell_osce_reviews', JSON.stringify(submittedReviews));
+            }
+
+            updateSubmittedCount();
+            renderHistoryList();
+            populateCandidateSelect();
+        }
+
+        let manualAddedStudents = [];
+        function loadManualAdditions() {
+            const saved = localStorage.getItem('speedwell_manual_students');
+            if (saved) {
+                try { manualAddedStudents = JSON.parse(saved); } catch(e) { manualAddedStudents = []; }
+            }
+        }
+
+        function saveManualAdditionsStorage() {
+            localStorage.setItem('speedwell_manual_students', JSON.stringify(manualAddedStudents));
+        }
+
+        function openManualAddModal() {
+            document.getElementById('manualName').value = "";
+            document.getElementById('manualId').value = "";
+            document.getElementById('manualBranch').value = document.getElementById('branchFilter').value;
+            onManualBranchChange();
+            document.getElementById('manualGender').value = document.getElementById('genderFilter').value;
+            document.getElementById('manualAddModal').classList.remove('hidden');
+        }
+
+        function closeManualAddModal() {
+            document.getElementById('manualAddModal').classList.add('hidden');
+        }
+
+        function onManualBranchChange() {
+            const branch = document.getElementById('manualBranch').value;
+            const genderSelect = document.getElementById('manualGender');
+            genderSelect.innerHTML = "";
+            if (branch === 'Jeddah') {
+                genderSelect.innerHTML = `<option value="Male">Male</option><option value="Female (Group A)">Female (Group A)</option><option value="Female (Group B)">Female (Group B)</option>`;
+            } else {
+                genderSelect.innerHTML = `<option value="Male">Male</option><option value="Female">Female</option>`;
+            }
+        }
+
+        function saveManualStudent() {
+            const branch = document.getElementById('manualBranch').value;
+            const genderGroup = document.getElementById('manualGender').value;
+            const name = document.getElementById('manualName').value.trim();
+            const id = document.getElementById('manualId').value.trim();
+
+            if (!name || !id) { alert("Please fill in both student name and ID."); return; }
+
+            let gender = "Male";
+            let group = null;
+            if (genderGroup.includes("Female")) {
+                gender = "Female";
+                if (genderGroup.includes("Group A")) group = "A";
+                else if (genderGroup.includes("Group B")) group = "B";
+            }
+
+            const newStudent = { id, name, branch, gender, group, isManual: true };
+            manualAddedStudents = manualAddedStudents.filter(s => s.id !== id);
+            manualAddedStudents.push(newStudent);
+            saveManualAdditionsStorage();
+
+            closeManualAddModal();
+            document.getElementById('branchFilter').value = branch;
+            onBranchChange();
+            document.getElementById('genderFilter').value = genderGroup;
+            filterCandidates();
+            
+            setTimeout(() => {
+                document.getElementById('candidateSelect').value = id;
+                loadCandidate(id);
+            }, 50);
+        }
+
+        function deleteCurrentManualStudent() {
+            if (!currentCandidate || !currentCandidate.isManual) return;
+            if (confirm(`Are you sure you want to remove "${currentCandidate.name}" from the added list?`)) {
+                manualAddedStudents = manualAddedStudents.filter(s => s.id !== currentCandidate.id);
+                saveManualAdditionsStorage();
+                filterCandidates();
+            }
+        }
+
+        function onBranchChange() {
+            const branch = document.getElementById('branchFilter').value;
+            const genderSelect = document.getElementById('genderFilter');
+            genderSelect.innerHTML = "";
+            if (branch === 'Jeddah') {
+                genderSelect.innerHTML = `<option value="Male">Male</option><option value="Female (Group A)">Female (Group A)</option><option value="Female (Group B)">Female (Group B)</option>`;
+            } else {
+                genderSelect.innerHTML = `<option value="Male">Male</option><option value="Female">Female</option>`;
+            }
+            filterCandidates();
+        }
+
+        async function loadCandidateData() {
+            const branch = document.getElementById('branchFilter').value;
+            const gender = document.getElementById('genderFilter').value;
+
+            let filenames = [];
+            if (branch === 'Jeddah') {
+                if (gender === 'Male') filenames = ['Jed-Males.json'];
+                else if (gender === 'Female (Group A)') filenames = ['Jed-Females-A.json'];
+                else if (gender === 'Female (Group B)') filenames = ['Jed-Females-B.json'];
+            } else {
+                masterCandidates = manualAddedStudents.filter(s => s.branch === branch);
+                filterCandidatesLocal();
+                return;
+            }
+
+            try {
+                let loaded = [];
+                for (const fname of filenames) {
+                    const res = await fetch(fname);
+                    if (res.ok) {
+                        const data = await res.json();
+                        loaded = loaded.concat(data);
+                    }
+                }
+                masterCandidates = loaded;
+            } catch (e) {
+                masterCandidates = [];
+            }
+
+            const matchingManual = manualAddedStudents.filter(s => {
+                if (s.branch !== branch) return false;
+                if (branch === 'Jeddah') {
+                    if (gender === 'Male') return s.gender === 'Male';
+                    if (gender === 'Female (Group A)') return s.gender === 'Female' && s.group === 'A';
+                    if (gender === 'Female (Group B)') return s.gender === 'Female' && s.group === 'B';
+                } else {
+                    return s.gender === gender;
+                }
+                return false;
+            });
+
+            matchingManual.forEach(m => {
+                if (!masterCandidates.some(c => c.id === m.id)) masterCandidates.push(m);
+            });
+
+            filterCandidatesLocal();
+        }
+
+        function filterCandidates() { loadCandidateData(); }
+
+        function filterCandidatesLocal() {
+            const branch = document.getElementById('branchFilter').value;
+            const gender = document.getElementById('genderFilter').value;
+            const query = document.getElementById('searchFilter').value.toLowerCase();
+
+            filteredCandidates = masterCandidates.filter(c => {
+                const matchBranch = c.branch === branch;
+                let matchGender = false;
+                if (branch === 'Jeddah') {
+                    if (gender === 'Male') matchGender = c.gender === 'Male';
+                    else if (gender === 'Female (Group A)') matchGender = c.gender === 'Female' && c.group === 'A';
+                    else if (gender === 'Female (Group B)') matchGender = c.gender === 'Female' && c.group === 'B';
+                } else {
+                    matchGender = c.gender === gender;
+                }
+                const matchSearch = c.name.toLowerCase().includes(query) || c.id.includes(query);
+                return matchBranch && matchGender && matchSearch;
+            });
+
+            filteredCandidates.sort((a, b) => a.name.localeCompare(b.name));
+            filteredCandidates.forEach((c, index) => { c.num = index + 1; });
+
+            populateCandidateSelect();
+
+            if (filteredCandidates.length > 0) {
+                loadCandidate(filteredCandidates[0].id);
+            } else {
+                currentCandidate = null;
+                document.getElementById('candidateNameDisplay').innerText = "No candidates found";
+                document.getElementById('candidateIdDisplay').innerText = "ID: --";
+                document.getElementById('bottomCandidateName').innerText = "None Selected";
+                document.getElementById('candidateStatusBadge').innerText = "Pending Assessment";
+                document.getElementById('deleteManualBtn').classList.add('hidden');
+                resetCurrentForm(false);
+            }
+        }
+
+        function updateSubmittedCount() {
+            const count = Object.keys(submittedReviews).length;
+            document.getElementById('submittedBadge').innerText = count;
+            document.getElementById('historyCount').innerText = `${count} reviews saved`;
+        }
+
+        function populateCandidateSelect() {
+            const select = document.getElementById('candidateSelect');
+            const selectedVal = select.value || (filteredCandidates[0] ? filteredCandidates[0].id : "");
+            select.innerHTML = "";
+
+            if (filteredCandidates.length === 0) {
+                const option = document.createElement('option');
+                option.textContent = "No students match this filter...";
+                option.disabled = true;
+                option.selected = true;
+                select.appendChild(option);
+                return;
+            }
+
+            filteredCandidates.forEach(c => {
+                const isEvaluated = !!submittedReviews[c.id];
+                const manualTag = c.isManual ? ' [Added]' : '';
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = `${c.num}. ${c.name} (${c.id})${manualTag} ${isEvaluated ? '✓ [Saved]' : ''}`;
+                if (c.id === selectedVal) option.selected = true;
+                select.appendChild(option);
+            });
+        }
+
+        function loadCandidate(candidateId) {
+            currentCandidate = filteredCandidates.find(c => c.id === candidateId);
+            if (!currentCandidate) return;
+
+            const manualBadgeText = currentCandidate.isManual ? ' [Added]' : '';
+            document.getElementById('candidateNameDisplay').innerText = `${currentCandidate.num}. ${currentCandidate.name}${manualBadgeText}`;
+            const groupText = currentCandidate.group ? ` | Group ${currentCandidate.group}` : '';
+            document.getElementById('candidateIdDisplay').innerText = `ID: ${currentCandidate.id} | ${currentCandidate.branch} - ${currentCandidate.gender}${groupText}`;
+            document.getElementById('bottomCandidateName').innerText = `${currentCandidate.name} (${currentCandidate.id})`;
+
+            const deleteBtn = document.getElementById('deleteManualBtn');
+            if (currentCandidate.isManual) {
+                deleteBtn.classList.remove('hidden');
+                deleteBtn.classList.add('flex');
+            } else {
+                deleteBtn.classList.add('hidden');
+                deleteBtn.classList.remove('flex');
+            }
+
+            const badge = document.getElementById('candidateStatusBadge');
+            if (submittedReviews[candidateId]) {
+                const evalData = submittedReviews[candidateId];
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-[#0f172a] border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700";
+                badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Saved`;
+                restoreRubricState(evalData);
+            } else {
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-[#0f172a] border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700";
+                badge.innerText = "Pending Assessment";
+                resetCurrentForm(false);
+            }
+
+            resetTimer();
+            calculateScores();
+        }
+
+        function renderTables() {
+            const wTbody = document.getElementById('wipperTableBody');
+            wTbody.innerHTML = "";
+            wipperSteps.forEach((step, idx) => {
+                const stepNum = idx + 1;
+                const row = document.createElement('tr');
+                row.className = "hover:bg-[#f4f5f7] dark:hover:bg-[#1e293b]/40 border-b border-[#cbd5e1]/50 dark:border-slate-700/50 transition-colors";
+                row.innerHTML = `
+                    <td class="py-3 px-4 text-center font-bold text-[#64748b]">${stepNum}</td>
+                    <td class="py-3 px-4 font-medium text-[#0f172a] dark:text-slate-200">${step}</td>
+                    <td class="py-3 px-4 text-right">
+                        <div class="inline-flex rounded-lg bg-[#f4f5f7] dark:bg-[#0f172a] p-0.5 border border-[#cbd5e1] dark:border-slate-700">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="w_${stepNum}" value="1" onchange="calculateScores()" class="peer sr-only">
+                                <span class="px-3 py-1 text-xs font-semibold rounded-md text-[#64748b] dark:text-slate-300 peer-checked:bg-emerald-600 peer-checked:text-white transition inline-block">Done</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="w_${stepNum}" value="0" checked onchange="calculateScores()" class="peer sr-only">
+                                <span class="px-3 py-1 text-xs font-semibold rounded-md text-[#64748b] dark:text-slate-300 peer-checked:bg-rose-700 peer-checked:text-white transition inline-block">Not done</span>
+                            </label>
+                        </div>
+                    </td>
+                `;
+                wTbody.appendChild(row);
+            });
+
+            const imTbody = document.getElementById('imTableBody');
+            imTbody.innerHTML = "";
+            imSteps.forEach((step, idx) => {
+                const stepNum = idx + 1;
+                const row = document.createElement('tr');
+                row.className = "hover:bg-[#f4f5f7] dark:hover:bg-[#1e293b]/40 border-b border-[#cbd5e1]/50 dark:border-slate-700/50 transition-colors";
+                row.innerHTML = `
+                    <td class="py-3 px-4 text-center font-bold text-[#64748b]">${stepNum}</td>
+                    <td class="py-3 px-4 font-medium text-[#0f172a] dark:text-slate-200">${step}</td>
+                    <td class="py-3 px-4 text-right">
+                        <div class="inline-flex rounded-lg bg-[#f4f5f7] dark:bg-[#0f172a] p-0.5 border border-[#cbd5e1] dark:border-slate-700">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="im_${stepNum}" value="1" onchange="calculateScores()" class="peer sr-only">
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-md text-[#64748b] dark:text-slate-300 peer-checked:bg-emerald-600 peer-checked:text-white transition inline-block">Done</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="im_${stepNum}" value="0.5" onchange="calculateScores()" class="peer sr-only">
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-md text-[#64748b] dark:text-slate-300 peer-checked:bg-amber-500 peer-checked:text-white transition inline-block">Half</span>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="im_${stepNum}" value="0" checked onchange="calculateScores()" class="peer sr-only">
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-md text-[#64748b] dark:text-slate-300 peer-checked:bg-rose-700 peer-checked:text-white transition inline-block">Not done</span>
+                            </label>
+                        </div>
+                    </td>
+                `;
+                imTbody.appendChild(row);
+            });
+        }
+
+        function calculateScores() {
+            let wipperScore = 0;
+            let wipperMax = wipperSteps.length;
+            wipperSteps.forEach((_, idx) => {
+                const radios = document.getElementsByName(`w_${idx + 1}`);
+                radios.forEach(r => { if (r.checked) wipperScore += parseFloat(r.value); });
+            });
+
+            let imScore = 0;
+            let imMax = imSteps.length;
+            imSteps.forEach((_, idx) => {
+                const radios = document.getElementsByName(`im_${idx + 1}`);
+                radios.forEach(r => { if (r.checked) imScore += parseFloat(r.value); });
+            });
+
+            const total = wipperScore + imScore;
+            const wipperPercent = (wipperScore / wipperMax) * 100;
+            const imPercent = (imScore / imMax) * 100;
+
+            const wipperBarEl = document.getElementById('wipperBar');
+            const imBarEl = document.getElementById('imBar');
+
+            wipperBarEl.style.width = `${wipperPercent}%`;
+            imBarEl.style.width = `${imPercent}%`;
+
+            function getProgressColorClass(percent) {
+                if (percent < 40) return "bg-rose-600 h-2.5 transition-all duration-300";
+                if (percent < 80) return "bg-amber-500 h-2.5 transition-all duration-300";
+                return "bg-emerald-600 h-2.5 transition-all duration-300";
+            }
+
+            wipperBarEl.className = getProgressColorClass(wipperPercent);
+            imBarEl.className = getProgressColorClass(imPercent);
+
+            return { wipperScore, imScore, totalScore: total };
+        }
+
+        async function submitEvaluation() {
+            if (!currentCandidate) { alert("Please select a candidate first."); return; }
+
+            const scores = calculateScores();
+            const examinerNotes = document.getElementById('examinerNotes').value;
+            const fbUseful = document.getElementById('fbUseful').value;
+            const fbAnxiety = document.getElementById('fbAnxiety').value;
+            const fbDifficulty = document.getElementById('fbDifficulty').value;
+            const fbClear = document.getElementById('fbClear').value;
+            const fbRecommend = document.getElementById('fbRecommend').value;
+            const studentComments = document.getElementById('studentComments').value;
+
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                document.getElementById('timerToggleBtn').innerHTML = `<i class="fa-solid fa-play"></i>`;
+            }
+            const timeUsedSeconds = 300 - timerSeconds;
+            const timeUsedString = `${Math.floor(timeUsedSeconds / 60).toString().padStart(2, '0')}:${(timeUsedSeconds % 60).toString().padStart(2, '0')}`;
+
+            const wipperDetails = {};
+            wipperSteps.forEach((_, idx) => {
+                const val = document.querySelector(`input[name="w_${idx + 1}"]:checked`)?.value || "0";
+                wipperDetails[`step_${idx + 1}`] = parseFloat(val);
+            });
+
+            const imDetails = {};
+            imSteps.forEach((_, idx) => {
+                const val = document.querySelector(`input[name="im_${idx + 1}"]:checked`)?.value || "0";
+                imDetails[`step_${idx + 1}`] = parseFloat(val);
+            });
+
+            const reviewRecord = {
+                candidateId: currentCandidate.id,
+                candidateName: currentCandidate.name,
+                candidateNum: currentCandidate.num,
+                branch: currentCandidate.branch,
+                gender: currentCandidate.gender,
+                group: currentCandidate.group || null,
+                isManual: currentCandidate.isManual || false,
+                wipperScore: scores.wipperScore,
+                imScore: scores.imScore,
+                totalScore: scores.totalScore,
+                notes: examinerNotes,
+                fbUseful,
+                fbAnxiety,
+                fbDifficulty,
+                fbClear,
+                fbRecommend,
+                studentComments,
+                timestamp: new Date().toLocaleString(),
+                timeUsed: timeUsedString,
+                wipperDetails,
+                imDetails
+            };
+
+            await saveStorageCloud(reviewRecord);
+
+            const badge = document.getElementById('candidateStatusBadge');
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-[#0f172a] border border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700";
+            badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Saved`;
+
+            toggleHistoryDrawer(true);
+        }
+
+        function restoreRubricState(record) {
+            if (record.wipperDetails) {
+                Object.keys(record.wipperDetails).forEach((key, idx) => {
+                    const val = record.wipperDetails[key];
+                    const radio = document.querySelector(`input[name="w_${idx + 1}"][value="${val}"]`);
+                    if (radio) radio.checked = true;
+                });
+            }
+
+            if (record.imDetails) {
+                Object.keys(record.imDetails).forEach((key, idx) => {
+                    const val = record.imDetails[key];
+                    const radio = document.querySelector(`input[name="im_${idx + 1}"][value="${val}"]`);
+                    if (radio) radio.checked = true;
+                });
+            }
+
+            document.getElementById('examinerNotes').value = record.notes || "";
+            document.getElementById('fbUseful').value = record.fbUseful || "";
+            document.getElementById('fbAnxiety').value = record.fbAnxiety || "";
+            document.getElementById('fbDifficulty').value = record.fbDifficulty || "";
+            document.getElementById('fbClear').value = record.fbClear || "";
+            document.getElementById('fbRecommend').value = record.fbRecommend || "";
+            document.getElementById('studentComments').value = record.studentComments || "";
+        }
+
+        function resetCurrentForm(confirmReset = true) {
+            if (confirmReset && !confirm("Reset all selection fields for this candidate?")) return;
+
+            wipperSteps.forEach((_, idx) => {
+                const radio = document.querySelector(`input[name="w_${idx + 1}"][value="0"]`);
+                if (radio) radio.checked = true;
+            });
+
+            imSteps.forEach((_, idx) => {
+                const radio = document.querySelector(`input[name="im_${idx + 1}"][value="0"]`);
+                if (radio) radio.checked = true;
+            });
+
+            document.getElementById('examinerNotes').value = "";
+            document.getElementById('fbUseful').value = "";
+            document.getElementById('fbAnxiety').value = "";
+            document.getElementById('fbDifficulty').value = "";
+            document.getElementById('fbClear').value = "";
+            document.getElementById('fbRecommend').value = "";
+            document.getElementById('studentComments').value = "";
+            calculateScores();
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            isTimerRunning = true;
+            timerInterval = setInterval(() => {
+                if (timerSeconds > 0) {
+                    timerSeconds--;
+                    updateTimerUI();
+                } else {
+                    isTimerRunning = false;
+                    clearInterval(timerInterval);
+                    document.getElementById('timerDisplay').classList.add('text-rose-500', 'animate-pulse');
+                }
+            }, 1000);
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('timerToggleBtn');
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                btn.innerHTML = `<i class="fa-solid fa-play"></i>`;
+            } else {
+                startTimer();
+                btn.innerHTML = `<i class="fa-solid fa-pause"></i>`;
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerSeconds = 300;
+            document.getElementById('timerDisplay').classList.remove('text-rose-500', 'animate-pulse');
+            updateTimerUI();
+            startTimer();
+            document.getElementById('timerToggleBtn').innerHTML = `<i class="fa-solid fa-pause"></i>`;
+        }
+
+        function updateTimerUI() {
+            const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+            const s = (timerSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+        }
+
+        function toggleHistoryDrawer(forceOpen = false) {
+            const drawer = document.getElementById('historyDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+
+            if (forceOpen || drawer.classList.contains('translate-x-full')) {
+                drawer.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+                renderHistoryList();
+            } else {
+                drawer.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function renderHistoryList() {
+            const container = document.getElementById('historyList');
+            const query = document.getElementById('historySearch').value.toLowerCase();
+            container.innerHTML = "";
+
+            const records = Object.values(submittedReviews).filter(r => 
+                r.candidateName.toLowerCase().includes(query) || r.candidateId.includes(query)
+            );
+
+            if (records.length === 0) {
+                container.innerHTML = `<div class="text-center text-[#64748b] text-xs py-8">No matching saved reviews found.</div>`;
+                return;
+            }
+
+            records.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).forEach(r => {
+                const card = document.createElement('div');
+                card.className = "pt-3 first:pt-0";
+                const groupLabel = r.group ? ` (Group ${r.group})` : '';
+                const manualBadge = r.isManual ? ' <span class="text-xs bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 px-1.5 py-0.2 rounded font-bold">[Added]</span>' : '';
+                card.innerHTML = `
+                    <div class="bg-[#f4f5f7] dark:bg-[#0f172a] hover:bg-slate-200 dark:hover:bg-slate-800 p-3 rounded-lg border border-[#cbd5e1] dark:border-slate-700 transition cursor-pointer" onclick="selectAndLoadCandidate('${r.candidateId}')">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-bold text-[#0f172a] dark:text-slate-200 text-sm">${r.candidateName}${manualBadge}</div>
+                                <div class="text-xs font-mono text-[#64748b]">ID: ${r.candidateId} | ${r.branch} - ${r.gender}${groupLabel}</div>
+                            </div>
+                            <span class="text-xs font-extrabold text-[#0f172a] dark:text-slate-200 bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded">Saved</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-2 text-[11px] text-[#64748b]">
+                            <span>Time: <strong>${r.timeUsed || "N/A"}</strong></span>
+                            <span>${r.timestamp}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectAndLoadCandidate(id) {
+            const review = submittedReviews[id];
+            if (review) {
+                document.getElementById('branchFilter').value = review.branch;
+                const branch = review.branch;
+                const genderSelect = document.getElementById('genderFilter');
+                genderSelect.innerHTML = "";
+
+                if (branch === 'Jeddah') {
+                    genderSelect.innerHTML = `<option value="Male">Male</option><option value="Female (Group A)">Female (Group A)</option><option value="Female (Group B)">Female (Group B)</option>`;
+                    if (review.gender === 'Female' && review.group === 'A') genderSelect.value = 'Female (Group A)';
+                    else if (review.gender === 'Female' && review.group === 'B') genderSelect.value = 'Female (Group B)';
+                    else genderSelect.value = review.gender;
+                } else {
+                    genderSelect.innerHTML = `<option value="Male">Male</option><option value="Female">Female</option>`;
+                    genderSelect.value = review.gender;
+                }
+
+                document.getElementById('searchFilter').value = "";
+                loadCandidateData().then(() => {
+                    document.getElementById('candidateSelect').value = id;
+                    loadCandidate(id);
+                });
+            }
+            toggleHistoryDrawer(false);
+        }
+
+        function exportData(type) {
+            const records = Object.values(submittedReviews);
+            if (records.length === 0) { alert("No saved evaluations available to export."); return; }
+
+            if (type === 'json') {
+                const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+                downloadBlob(blob, `osce_reviews_${Date.now()}.json`);
+            } else if (type === 'excel') {
+                const excelData = records.map(r => ({
+                    "Branch": r.branch || "N/A",
+                    "Gender": r.gender || "N/A",
+                    "Group": r.group || "N/A",
+                    "Added Manually": r.isManual ? "Yes" : "No",
+                    "Candidate Num": r.candidateNum,
+                    "Student Name": r.candidateName,
+                    "Student ID": r.candidateId,
+                    "Total Score (26)": r.totalScore,
+                    "WIPPPER Score (9)": r.wipperScore,
+                    "IM Score (17)": r.imScore,
+                    "Time Used (mm:ss)": r.timeUsed || "N/A",
+                    "Examiner Notes": r.notes,
+                    "FB Q1: Useful? (1-10)": r.fbUseful || "",
+                    "FB Q2: Reduced Anxiety? (1-10)": r.fbAnxiety || "",
+                    "FB Q3: Fair Difficulty? (1-10)": r.fbDifficulty || "",
+                    "FB Q4: Clear Instructions? (1-10)": r.fbClear || "",
+                    "FB Q5: Recommend Next Yr? (1-10)": r.fbRecommend || "",
+                    "Student Additional Comments": r.studentComments || "",
+                    "Timestamp": r.timestamp
+                }));
+
+                const worksheet = XLSX.utils.json_to_sheet(excelData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Scores and Feedback");
+                XLSX.writeFile(workbook, `osce_scores_${Date.now()}.xlsx`);
+            }
+        }
+
+        function downloadBlob(blob, fileName) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
