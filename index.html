@@ -65,9 +65,6 @@
                 </div>
             </div>
             <form onsubmit="handleGateLogin(event)" class="p-6 space-y-4">
-                <p class="text-xs sm:text-sm text-[#64748b] dark:text-slate-300 leading-relaxed">
-                    Enter the examiner station password to unlock the evaluation terminal and load the protected student roster.
-                </p>
                 <div>
                     <label for="gatePasswordInput" class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1.5">Station Password</label>
                     <div class="relative">
@@ -647,7 +644,11 @@
 
         async function lockTerminal() {
             if (_supabase) {
-                try { await _supabase.auth.signOut(); } catch (e) {}
+                try {
+                    await _supabase.removeAllChannels();
+                    realtimeInitialized = false;
+                    await _supabase.auth.signOut();
+                } catch (e) {}
             }
             isTerminalUnlocked = false;
             allCloudStudents = [];
@@ -678,8 +679,11 @@
             }
         }
 
+        let realtimeInitialized = false;
+
         function setupRealtimeSync() {
-            if (!_supabase) return;
+            if (!_supabase || realtimeInitialized) return;
+            realtimeInitialized = true;
             
             _supabase.channel('public:osce_reviews')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'osce_reviews' }, payload => {
