@@ -66,6 +66,13 @@
             </div>
             <form onsubmit="handleGateLogin(event)" class="p-6 space-y-4">
                 <div>
+                    <label for="gateExaminerNameInput" class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1.5">Examiner Name</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user-doctor absolute left-3.5 top-3 text-[#64748b] dark:text-slate-400 text-sm"></i>
+                        <input type="text" id="gateExaminerNameInput" required autocomplete="off" placeholder="Enter your full name..." class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg py-2.5 pl-10 pr-4 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a] focus:outline-none">
+                    </div>
+                </div>
+                <div>
                     <label for="gatePasswordInput" class="block text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-1.5">Station Password</label>
                     <div class="relative">
                         <i class="fa-solid fa-key absolute left-3.5 top-3 text-[#64748b] dark:text-slate-400 text-sm"></i>
@@ -429,9 +436,16 @@
 
     <div class="fixed bottom-0 left-0 right-0 bg-[#ffffff] dark:bg-[#1e293b] border-t border-[#cbd5e1] dark:border-slate-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-30 py-3 px-4 sm:px-6 transition-colors duration-300">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-2 text-xs sm:text-sm text-[#64748b] dark:text-slate-300">
-                <i class="fa-solid fa-user text-[#64748b] dark:text-slate-400"></i>
-                <span>Active: <strong id="bottomCandidateName" class="text-[#0f172a] dark:text-[#f8fafc]">None Selected</strong></span>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-[#64748b] dark:text-slate-300">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-user-doctor text-[#64748b] dark:text-slate-400"></i>
+                    <span>Welcome <strong id="activeExaminerDisplay" class="text-[#0f172a] dark:text-[#f8fafc]">--</strong></span>
+                </div>
+                <span class="hidden sm:inline text-slate-300 dark:text-slate-600">|</span>
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-user text-[#64748b] dark:text-slate-400"></i>
+                    <span>Active: <strong id="bottomCandidateName" class="text-[#0f172a] dark:text-[#f8fafc]">None Selected</strong></span>
+                </div>
             </div>
             <div class="flex gap-3">
                 <button id="submitBtn" onclick="handleSubmissionClick()" class="bg-[#0f172a] hover:bg-slate-800 border border-slate-700 text-white font-bold px-6 py-2.5 rounded-lg shadow transition flex items-center gap-2 text-sm">
@@ -474,14 +488,32 @@
 
         let pendingActionType = null;
         let isTerminalUnlocked = false;
+        let currentExaminerName = "";
         let allCloudStudents = [];
         let confirmDialogResolver = null;
         let toastTimeout = null;
+        let inactivityTimeout = null;
+        const INACTIVITY_LIMIT_MS = 2 * 60 * 1000; // 2 minutes
 
         let _supabase = null;
         try {
+            // Remove any previously cached Supabase session from localStorage so reload always requires login
+            try {
+                Object.keys(localStorage).forEach(k => {
+                    if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+                        localStorage.removeItem(k);
+                    }
+                });
+            } catch (e) {}
+
             if (typeof supabase !== 'undefined' && !SUPABASE_URL.includes('YOUR_')) {
-                _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    auth: {
+                        persistSession: false,
+                        autoRefreshToken: false,
+                        detectSessionInUrl: false
+                    }
+                });
             }
         } catch (e) {
             console.warn("Supabase initialization skipped; using local storage.");
@@ -579,30 +611,72 @@
         window.addEventListener('DOMContentLoaded', async () => {
             updateDarkModeIcon();
             renderTables();
+            setupInactivityListeners();
             await checkExistingAuthSession();
         });
 
+        function setupInactivityListeners() {
+            const activityEvents = ['mousedown', 'keydown', 'touchstart', 'touchmove', 'scroll', 'wheel', 'click', 'input', 'change'];
+            activityEvents.forEach(evt => {
+                window.addEventListener(evt, resetInactivityTimer, { passive: true, capture: true });
+            });
+        }
+
+        function resetInactivityTimer() {
+            if (!isTerminalUnlocked) {
+                if (inactivityTimeout) {
+                    clearTimeout(inactivityTimeout);
+                    inactivityTimeout = null;
+                }
+                return;
+            }
+            if (inactivityTimeout) clearTimeout(inactivityTimeout);
+            inactivityTimeout = setTimeout(() => {
+                if (isTerminalUnlocked) {
+                    lockTerminal('inactivity');
+                }
+            }, INACTIVITY_LIMIT_MS);
+        }
+
         async function checkExistingAuthSession() {
+            // Always require password entry on page load/reload
+            if (_supabase) {
+                try {
+                    await _supabase.auth.signOut();
+                } catch (e) {}
+            }
+        }
+
+        async function logExaminerLoginAttempt(examinerName, status) {
             if (!_supabase) return;
             try {
-                const { data: { session } } = await _supabase.auth.getSession();
-                if (session) {
-                    await unlockTerminal();
-                }
+                const { error } = await _supabase.from('examiner_logins').insert({
+                    examiner_name: examinerName,
+                    status: status,
+                    attempted_at: new Date().toLocaleString()
+                });
+                if (error) console.warn("Could not log login attempt:", error.message);
             } catch (e) {
-                console.warn("Session check failed:", e);
+                console.warn("Login attempt logging failed:", e);
             }
         }
 
         async function handleGateLogin(e) {
             e.preventDefault();
+            const examinerInput = document.getElementById('gateExaminerNameInput');
             const passwordInput = document.getElementById('gatePasswordInput');
             const errorBox = document.getElementById('gateErrorMsg');
             const errorText = document.getElementById('gateErrorText');
             const submitBtn = document.getElementById('gateSubmitBtn');
             const submitBtnText = document.getElementById('gateSubmitBtnText');
 
+            const examinerName = examinerInput ? examinerInput.value.trim() : "";
             const password = passwordInput.value;
+            if (!examinerName) {
+                errorText.innerText = "Please enter your examiner name.";
+                errorBox.classList.remove('hidden');
+                return;
+            }
             if (!password) return;
 
             errorBox.classList.add('hidden');
@@ -617,8 +691,15 @@
                 });
 
                 if (error || !data.session) {
+                    await logExaminerLoginAttempt(examinerName, "Failed (Wrong Password)");
                     throw new Error("Invalid station password. Access denied.");
                 }
+
+                currentExaminerName = examinerName;
+                const examinerDisplay = document.getElementById('activeExaminerDisplay');
+                if (examinerDisplay) examinerDisplay.innerText = currentExaminerName;
+
+                await logExaminerLoginAttempt(currentExaminerName, "Success");
 
                 passwordInput.value = "";
                 await unlockTerminal();
@@ -634,6 +715,7 @@
         async function unlockTerminal() {
             isTerminalUnlocked = true;
             document.getElementById('authGateOverlay').classList.add('hidden');
+            resetInactivityTimer();
             await fetchMasterStudentsCloud();
             await loadManualAdditionsCloud();
             await loadStorageCloud();
@@ -642,7 +724,11 @@
             setupRealtimeSync();
         }
 
-        async function lockTerminal() {
+        async function lockTerminal(reason = 'manual') {
+            if (inactivityTimeout) {
+                clearTimeout(inactivityTimeout);
+                inactivityTimeout = null;
+            }
             if (_supabase) {
                 try {
                     await _supabase.removeAllChannels();
@@ -651,13 +737,28 @@
                 } catch (e) {}
             }
             isTerminalUnlocked = false;
+            currentExaminerName = "";
+            const examinerDisplay = document.getElementById('activeExaminerDisplay');
+            if (examinerDisplay) examinerDisplay.innerText = "--";
             allCloudStudents = [];
             masterCandidates = [];
             filteredCandidates = [];
             currentCandidate = null;
             clearInterval(timerInterval);
             document.getElementById('authGateOverlay').classList.remove('hidden');
+            const examinerInput = document.getElementById('gateExaminerNameInput');
+            if (examinerInput) examinerInput.value = "";
             document.getElementById('gatePasswordInput').value = "";
+
+            const errorBox = document.getElementById('gateErrorMsg');
+            const errorText = document.getElementById('gateErrorText');
+            if (reason === 'inactivity') {
+                errorText.innerText = "Session closed due to 2 minutes of inactivity. Please sign in again.";
+                errorBox.classList.remove('hidden');
+                showToast("Terminal locked due to 2 minutes of inactivity.", true);
+            } else {
+                errorBox.classList.add('hidden');
+            }
         }
 
         async function fetchMasterStudentsCloud() {
@@ -776,7 +877,11 @@
                 submittedReviews = {};
                 if (data) {
                     data.forEach(row => {
-                        submittedReviews[row.candidate_id] = row.payload;
+                        const record = row.payload || {};
+                        if (row.examiner_name && !record.examinerName) {
+                            record.examinerName = row.examiner_name;
+                        }
+                        submittedReviews[row.candidate_id] = record;
                     });
                 }
             } catch (e) {
@@ -818,29 +923,37 @@
             submittedReviews[reviewRecord.candidateId] = reviewRecord;
             
             if (_supabase) {
+                const baseRow = {
+                    candidate_id: reviewRecord.candidateId,
+                    candidate_name: reviewRecord.candidateName,
+                    examiner_name: reviewRecord.examinerName || currentExaminerName || "Unknown Examiner",
+                    branch: reviewRecord.branch,
+                    gender: reviewRecord.gender,
+                    total_score: reviewRecord.totalScore,
+                    wipper_score: reviewRecord.wipperScore,
+                    im_score: reviewRecord.imScore,
+                    notes: reviewRecord.notes,
+                    fb_useful: reviewRecord.fbUseful,
+                    fb_anxiety: reviewRecord.fbAnxiety,
+                    fb_difficulty: reviewRecord.fbDifficulty,
+                    fb_clear: reviewRecord.fbClear,
+                    fb_recommend: reviewRecord.fbRecommend,
+                    student_comments: reviewRecord.studentComments,
+                    payload: reviewRecord,
+                    timestamp: reviewRecord.timestamp
+                };
                 try {
-                    const { error } = await _supabase.from('osce_reviews').upsert({
-                        candidate_id: reviewRecord.candidateId,
-                        candidate_name: reviewRecord.candidateName,
-                        branch: reviewRecord.branch,
-                        gender: reviewRecord.gender,
-                        total_score: reviewRecord.totalScore,
-                        wipper_score: reviewRecord.wipperScore,
-                        im_score: reviewRecord.imScore,
-                        notes: reviewRecord.notes,
-                        fb_useful: reviewRecord.fbUseful,
-                        fb_anxiety: reviewRecord.fbAnxiety,
-                        fb_difficulty: reviewRecord.fbDifficulty,
-                        fb_clear: reviewRecord.fbClear,
-                        fb_recommend: reviewRecord.fbRecommend,
-                        student_comments: reviewRecord.studentComments,
-                        payload: reviewRecord,
-                        timestamp: reviewRecord.timestamp
-                    }, { onConflict: 'candidate_id' });
-                    
+                    let { error } = await _supabase.from('osce_reviews').upsert(baseRow, { onConflict: 'candidate_id' });
+                    if (error && error.message && error.message.includes('examiner_name')) {
+                        // Fallback if examiner_name column hasn't been added to osce_reviews table yet
+                        const { examiner_name, ...fallbackRow } = baseRow;
+                        const retry = await _supabase.from('osce_reviews').upsert(fallbackRow, { onConflict: 'candidate_id' });
+                        error = retry.error;
+                    }
                     if (error) throw error;
                     safeSetStorage('med_osce_reviews', JSON.stringify(submittedReviews));
                 } catch (e) {
+                    console.warn("Cloud save error:", e);
                     safeSetStorage('med_osce_reviews', JSON.stringify(submittedReviews));
                 }
             } else {
@@ -1275,6 +1388,7 @@
             const reviewRecord = {
                 candidateId: currentCandidate.id,
                 candidateName: currentCandidate.name,
+                examinerName: currentExaminerName || "Unknown Examiner",
                 candidateNum: currentCandidate.num,
                 branch: currentCandidate.branch,
                 gender: currentCandidate.gender,
@@ -1444,7 +1558,7 @@
                             <span class="text-xs font-extrabold text-white bg-emerald-600 px-2 py-0.5 rounded">Submitted</span>
                         </div>
                         <div class="flex justify-between items-center mt-2 text-[11px] text-[#64748b]">
-                            <span>Time: <strong>${r.timeUsed || "N/A"}</strong></span>
+                            <span>Examiner: <strong class="text-[#0f172a] dark:text-slate-300">${r.examinerName || "N/A"}</strong> | Time: <strong>${r.timeUsed || "N/A"}</strong></span>
                             <span>${r.timestamp}</span>
                         </div>
                     </div>
