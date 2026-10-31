@@ -302,57 +302,6 @@
                         <textarea id="examinerNotes" rows="3" class="w-full p-2.5 border border-[#cbd5e1] dark:border-slate-700 rounded-lg text-sm bg-[#f4f5f7] dark:bg-[#0f172a] text-[#0f172a] dark:text-[#f8fafc] focus:bg-[#ffffff] dark:focus:bg-[#1e293b] focus:ring-2 focus:ring-[#0f172a] focus:outline-none transition" placeholder="Enter notes or feedback regarding candidate performance..."></textarea>
                     </div>
 
-                    <div class="pt-4 border-t border-[#cbd5e1] dark:border-slate-700 space-y-3">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-[#64748b] dark:text-slate-400 mb-2">
-                            <i class="fa-solid fa-comment-medical text-[#0f172a] dark:text-slate-300 mr-1"></i> Student Post-Exam Feedback
-                        </h4>
-                        
-                        <div>
-                            <label class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">1. How useful was this mock exam? (1-10)</label>
-                            <select id="fbUseful" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
-                                <option value="" disabled selected>Select rating...</option>
-                                <option value="1">1 - Not useful at all</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Neutral</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10 - Very useful</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">2. How helpful was this in reducing anxiety? (1-10)</label>
-                            <select id="fbAnxiety" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
-                                <option value="" disabled selected>Select rating...</option>
-                                <option value="1">1 - Not helpful</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Neutral</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10 - Extremely helpful</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">3. How fair/appropriate was the difficulty? (1-10)</label>
-                            <select id="fbDifficulty" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
-                                <option value="" disabled selected>Select rating...</option>
-                                <option value="1">1 - Unfair/Unexpected</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Neutral</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10 - Very fair/Expected</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">4. Were station instructions clear? (1-10)</label>
-                            <select id="fbClear" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
-                                <option value="" disabled selected>Select rating...</option>
-                                <option value="1">1 - Unclear</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Neutral</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10 - Very clear</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">5. Recommend doing this again next year? (1-10)</label>
-                            <select id="fbRecommend" class="w-full bg-[#f4f5f7] dark:bg-[#0f172a] border border-[#cbd5e1] dark:border-slate-700 rounded-lg p-2 text-sm text-[#0f172a] dark:text-[#f8fafc] focus:ring-2 focus:ring-[#0f172a]">
-                                <option value="" disabled selected>Select rating...</option>
-                                <option value="1">1 - Do not recommend</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Neutral</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10 - Highly recommend</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="studentComments" class="block text-xs font-medium text-[#64748b] dark:text-slate-300 mb-1">Student's Additional Comments</label>
-                            <textarea id="studentComments" rows="2" class="w-full p-2.5 border border-[#cbd5e1] dark:border-slate-700 rounded-lg text-sm bg-[#f4f5f7] dark:bg-[#0f172a] text-[#0f172a] dark:text-[#f8fafc] focus:bg-[#ffffff] dark:focus:bg-[#1e293b] focus:ring-2 focus:ring-[#0f172a] focus:outline-none transition" placeholder="Any final thoughts from the student..."></textarea>
-                        </div>
-                    </div>
-
                     <button onclick="resetCurrentForm()" class="w-full py-2 mt-4 bg-[#f4f5f7] dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[#64748b] dark:text-slate-300 rounded-lg text-xs font-semibold transition border border-[#cbd5e1] dark:border-slate-700">
                         <i class="fa-solid fa-arrows-rotate mr-1"></i> Clear Selection Options
                     </button>
@@ -933,12 +882,6 @@
                     wipper_score: reviewRecord.wipperScore,
                     im_score: reviewRecord.imScore,
                     notes: reviewRecord.notes,
-                    fb_useful: reviewRecord.fbUseful,
-                    fb_anxiety: reviewRecord.fbAnxiety,
-                    fb_difficulty: reviewRecord.fbDifficulty,
-                    fb_clear: reviewRecord.fbClear,
-                    fb_recommend: reviewRecord.fbRecommend,
-                    student_comments: reviewRecord.studentComments,
                     payload: reviewRecord,
                     timestamp: reviewRecord.timestamp
                 };
@@ -1358,12 +1301,6 @@
         async function executeSubmission() {
             const scores = calculateScores();
             const examinerNotes = document.getElementById('examinerNotes').value;
-            const fbUseful = document.getElementById('fbUseful').value;
-            const fbAnxiety = document.getElementById('fbAnxiety').value;
-            const fbDifficulty = document.getElementById('fbDifficulty').value;
-            const fbClear = document.getElementById('fbClear').value;
-            const fbRecommend = document.getElementById('fbRecommend').value;
-            const studentComments = document.getElementById('studentComments').value;
 
             if (isTimerRunning) {
                 clearInterval(timerInterval);
@@ -1398,12 +1335,6 @@
                 imScore: scores.imScore,
                 totalScore: scores.totalScore,
                 notes: examinerNotes,
-                fbUseful,
-                fbAnxiety,
-                fbDifficulty,
-                fbClear,
-                fbRecommend,
-                studentComments,
                 timestamp: new Date().toLocaleString(),
                 timeUsed: timeUsedString,
                 savedTimerSeconds: timerSeconds,
@@ -1439,12 +1370,6 @@
             }
 
             document.getElementById('examinerNotes').value = record.notes || "";
-            document.getElementById('fbUseful').value = record.fbUseful || "";
-            document.getElementById('fbAnxiety').value = record.fbAnxiety || "";
-            document.getElementById('fbDifficulty').value = record.fbDifficulty || "";
-            document.getElementById('fbClear').value = record.fbClear || "";
-            document.getElementById('fbRecommend').value = record.fbRecommend || "";
-            document.getElementById('studentComments').value = record.studentComments || "";
         }
 
         async function resetCurrentForm(confirmReset = true) {
@@ -1464,12 +1389,6 @@
             });
 
             document.getElementById('examinerNotes').value = "";
-            document.getElementById('fbUseful').value = "";
-            document.getElementById('fbAnxiety').value = "";
-            document.getElementById('fbDifficulty').value = "";
-            document.getElementById('fbClear').value = "";
-            document.getElementById('fbRecommend').value = "";
-            document.getElementById('studentComments').value = "";
             calculateScores();
         }
 
