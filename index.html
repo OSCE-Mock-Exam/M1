@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OSCE Mock Examiner Terminal</title>
-    <!-- Tailwind CSS CDN -->
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -25,7 +25,7 @@
         }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Supabase JS Client for Cloud Syncing -->
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         ::-webkit-scrollbar {
@@ -52,9 +52,19 @@
 </head>
 <body class="bg-[#f4f5f7] dark:bg-[#090d16] text-[#0f172a] dark:text-[#f8fafc] antialiased min-h-screen flex flex-col font-sans pb-24 transition-colors duration-300">
 
-    <!-- Full-Screen Security Gate Overlay -->
-    <div id="authGateOverlay" class="fixed inset-0 bg-[#090d16] z-[100] flex items-center justify-center p-4 transition-opacity duration-300">
-        <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-[#cbd5e1] dark:border-slate-700 w-full max-w-md overflow-hidden">
+    
+    <div id="authGateOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4 transition-opacity duration-300 overflow-hidden">
+        
+        
+        <video class="absolute inset-0 w-full h-full object-cover z-0" autoplay loop muted playsinline>
+            <source src="Login-bg.mp4" type="video/mp4">
+        </video>
+        
+       
+        <div class="absolute inset-0 bg-[#0f172a]/70 z-10 backdrop-blur-sm"></div>
+
+        
+        <div class="relative z-20 bg-[#ffffff] dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-[#cbd5e1] dark:border-slate-700 w-full max-w-md overflow-hidden">
             <div class="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-white px-6 py-5 flex items-center gap-3 border-b border-slate-800">
                 <div class="h-11 w-11 rounded-xl bg-white/10 flex items-center justify-center text-slate-200 text-lg border border-white/10">
                     <i class="fa-solid fa-shield-halved"></i>
@@ -91,13 +101,13 @@
         </div>
     </div>
 
-    <!-- In-Page Notification Toast -->
+    
     <div id="toastNotification" class="fixed top-4 right-4 z-[110] hidden max-w-sm bg-[#0f172a] text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3 text-xs sm:text-sm font-semibold transition-all">
         <i id="toastIcon" class="fa-solid fa-circle-info text-sky-400 text-base"></i>
         <span id="toastMessage">Notification</span>
     </div>
 
-    <!-- In-Page Confirmation Modal -->
+   
     <div id="confirmDialogModal" class="fixed inset-0 bg-slate-950/60 z-[90] hidden backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
         <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-xl shadow-2xl border border-[#cbd5e1] dark:border-slate-700 w-full max-w-sm overflow-hidden">
             <div class="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-white px-5 py-3.5 flex justify-between items-center border-b border-slate-800">
@@ -432,7 +442,7 @@
         const SUPABASE_URL = 'https://otmguoasscbplxfzdwww.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90bWd1b2Fzc2NicGx4Znpkd3d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNjE5NzEsImV4cCI6MjEwODkzNzk3MX0.e7Ai1AInObZItBKR6tM3juYj0jT_7AClptHnGBjbeNU';
         
-        // Shared Supabase Auth email (password is stored securely in Supabase Auth, never in GitHub!)
+        
         const EXAMINER_AUTH_EMAIL = 'examiner@med222.local';
 
         let pendingActionType = null;
@@ -442,11 +452,11 @@
         let confirmDialogResolver = null;
         let toastTimeout = null;
         let inactivityTimeout = null;
-        const INACTIVITY_LIMIT_MS = 2 * 60 * 1000; // 2 minutes
+        const INACTIVITY_LIMIT_MS = 2 * 60 * 1000; 
 
         let _supabase = null;
         try {
-            // Remove any previously cached Supabase session from localStorage so reload always requires login
+            
             try {
                 Object.keys(localStorage).forEach(k => {
                     if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
@@ -588,7 +598,7 @@
         }
 
         async function checkExistingAuthSession() {
-            // Always require password entry on page load/reload
+            
             if (_supabase) {
                 try {
                     await _supabase.auth.signOut();
@@ -888,7 +898,7 @@
                 try {
                     let { error } = await _supabase.from('osce_reviews').upsert(baseRow, { onConflict: 'candidate_id' });
                     if (error && error.message && error.message.includes('examiner_name')) {
-                        // Fallback if examiner_name column hasn't been added to osce_reviews table yet
+                       
                         const { examiner_name, ...fallbackRow } = baseRow;
                         const retry = await _supabase.from('osce_reviews').upsert(fallbackRow, { onConflict: 'candidate_id' });
                         error = retry.error;
