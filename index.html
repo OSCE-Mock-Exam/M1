@@ -53,18 +53,8 @@
 <body class="bg-[#f4f5f7] dark:bg-[#090d16] text-[#0f172a] dark:text-[#f8fafc] antialiased min-h-screen flex flex-col font-sans pb-24 transition-colors duration-300">
 
     
-    <div id="authGateOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4 transition-opacity duration-300 overflow-hidden">
-        
-        
-        <video class="absolute inset-0 w-full h-full object-cover z-0" autoplay loop muted playsinline>
-            <source src="Login-bg.mp4" type="video/mp4">
-        </video>
-        
-       
-        <div class="absolute inset-0 bg-[#0f172a]/70 z-10 backdrop-blur-sm"></div>
-
-        
-        <div class="relative z-20 bg-[#ffffff] dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-[#cbd5e1] dark:border-slate-700 w-full max-w-md overflow-hidden">
+    <div id="authGateOverlay" class="fixed inset-0 bg-[#090d16] z-[100] flex items-center justify-center p-4 transition-opacity duration-300">
+        <div class="bg-[#ffffff] dark:bg-[#1e293b] rounded-2xl shadow-2xl border border-[#cbd5e1] dark:border-slate-700 w-full max-w-md overflow-hidden">
             <div class="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-white px-6 py-5 flex items-center gap-3 border-b border-slate-800">
                 <div class="h-11 w-11 rounded-xl bg-white/10 flex items-center justify-center text-slate-200 text-lg border border-white/10">
                     <i class="fa-solid fa-shield-halved"></i>
@@ -456,7 +446,7 @@
 
         let _supabase = null;
         try {
-            
+           
             try {
                 Object.keys(localStorage).forEach(k => {
                     if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
@@ -898,7 +888,7 @@
                 try {
                     let { error } = await _supabase.from('osce_reviews').upsert(baseRow, { onConflict: 'candidate_id' });
                     if (error && error.message && error.message.includes('examiner_name')) {
-                       
+                        
                         const { examiner_name, ...fallbackRow } = baseRow;
                         const retry = await _supabase.from('osce_reviews').upsert(fallbackRow, { onConflict: 'candidate_id' });
                         error = retry.error;
