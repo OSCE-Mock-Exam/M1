@@ -708,7 +708,7 @@
             const errorBox = document.getElementById('gateErrorMsg');
             const errorText = document.getElementById('gateErrorText');
             if (reason === 'inactivity') {
-                errorText.innerText = "Session closed due to 2 minutes of inactivity. Please sign in again.";
+                errorText.innerText = "Session closed due to 4 minutes of inactivity. Please sign in again.";
                 errorBox.classList.remove('hidden');
                 showToast("Terminal locked due to 2 minutes of inactivity.", true);
             } else {
